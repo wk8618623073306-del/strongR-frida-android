@@ -94,10 +94,17 @@ jobs:
         node-version: 18
 
     - name: Setup git credentials (if configured)
-      uses: fusion-engineering/setup-git-credentials@v2
-      if: ${{ secrets.GIT_CREDENTIALS != '' }}
-      with:
-        credentials: ${{secrets.GIT_CREDENTIALS}}
+      shell: bash
+      env:
+        GIT_CREDENTIALS: ${{ secrets.GIT_CREDENTIALS }}
+      run: |
+        if [ -n "$GIT_CREDENTIALS" ]; then
+          git config --global credential.helper "store --file=$HOME/.git-credentials"
+          echo "$GIT_CREDENTIALS" > $HOME/.git-credentials
+          echo "Git credentials configured"
+        else
+          echo "GIT_CREDENTIALS not set, skipping git credentials setup"
+        fi
 
     - name: set up JDK 17
       uses: actions/setup-java@v3
