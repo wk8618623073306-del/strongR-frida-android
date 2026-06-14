@@ -131,29 +131,45 @@ jobs:
 
     - name: build frida for Android
       shell: bash
+      env:
+        GIT_NAME: ${{ secrets.GIT_NAME }}
+        GIT_EMAIL: ${{ secrets.GIT_EMAIL }}
+        PATCH_REPO: ${{ secrets.PATCH_REPO }}
       run: |
-        git config --global user.name "${{ secrets.GIT_NAME }}"
-        git config --global user.email "${{ secrets.GIT_EMAIL }}"
-        git clone ${{ secrets.PATCH_REPO }}
-        export ANDROID_NDK_ROOT=${{ steps.setup-ndk.outputs.ndk-path }}
+        if [ -n "$GIT_NAME" ]; then
+          git config --global user.name "$GIT_NAME"
+        fi
+        if [ -n "$GIT_EMAIL" ]; then
+          git config --global user.email "$GIT_EMAIL"
+        fi
+        if [ -n "$PATCH_REPO" ]; then
+          git clone "$PATCH_REPO"
+        else
+          echo "PATCH_REPO not set, skipping patch repo clone"
+        fi
+        export ANDROID_NDK_ROOT=${{ steps.setup-ndk.outputs.ndk-root }}
         git clone --recurse-submodules https://github.com/frida/frida
         cd frida
-        for path in ../Patchs/strongR-frida/*
-        do
-          name=$(basename $path)
-          real=$(realpath $path)
-          echo "Apply patches in $real to frida/subprojects/$name"
-          cd subprojects/$name
-          git am ../../../Patchs/strongR-frida/$name/*.patch
-          cd ../..
-          echo $i
-        done
+        if [ -d "../Patchs/strongR-frida" ]; then
+          for path in ../Patchs/strongR-frida/*
+          do
+            name=$(basename $path)
+            real=$(realpath $path)
+            echo "Apply patches in $real to frida/subprojects/$name"
+            cd subprojects/$name
+            git am ../../../Patchs/strongR-frida/$name/*.patch
+            cd ../..
+            echo $i
+          done
+        else
+          echo "No patches found, skipping patch application"
+        fi
         cd ..
         
         ARCHES="android-arm android-arm64 android-x86 android-x86_64"
         for ARCH in $ARCHES
         do
-          mkdir build-$ARCH
+          mkdir -p build-$ARCH
           cd build-$ARCH
           ../frida/configure --host=$ARCH
           make
