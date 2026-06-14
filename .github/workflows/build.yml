@@ -114,9 +114,9 @@ jobs:
 
     - name: Setup Android NDK
       id: setup-ndk
-      uses: nttld/setup-ndk@v1.0.6
+      uses: nttld/setup-ndk@v1.3.1
       with:
-        ndk-version: r25b
+        ndk-version: r29
     
     - name: Set up Python 3.9
       uses: actions/setup-python@v5.1.0
@@ -147,7 +147,7 @@ jobs:
         else
           echo "PATCH_REPO not set, skipping patch repo clone"
         fi
-        export ANDROID_NDK_ROOT=${{ steps.setup-ndk.outputs.ndk-root }}
+        export ANDROID_NDK_ROOT=${{ steps.setup-ndk.outputs.ndk-path }}
         git clone --recurse-submodules https://github.com/frida/frida
         cd frida
         if [ -d "../Patchs/strongR-frida" ]; then
